@@ -70,7 +70,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <>
       <div className="px-5 py-5 border-b border-[var(--line)] flex items-center justify-between">
         <div>
-          <div className="text-[15px] font-semibold text-[var(--ink)] leading-tight">Insti Dispenser</div>
+          <div className="text-[15px] font-semibold text-[var(--ink)] leading-tight">Sales Samples & Dispenser</div>
           <div className="text-[11px] text-[var(--ink-soft)] mt-0.5">Request &amp; Monitoring</div>
         </div>
         <button
@@ -142,7 +142,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <path d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <span className="md:hidden text-sm font-semibold text-[var(--ink)] flex-1 truncate">Insti Dispenser</span>
+          <span className="md:hidden text-sm font-semibold text-[var(--ink)] flex-1 truncate">Sales Samples & Dispenser</span>
           <button
             onClick={() => setShowNotif((s) => !s)}
             className="relative w-9 h-9 rounded-full flex items-center justify-center hover:bg-[#eef1f0] text-[var(--ink-soft)] shrink-0"
