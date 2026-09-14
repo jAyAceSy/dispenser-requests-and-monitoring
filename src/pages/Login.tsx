@@ -80,7 +80,7 @@ export function Login() {
                   </Field>
                   <Field label="Role">
                     <select value={role} onChange={(e) => setRole(e.target.value)} className="input">
-                      <option value="insti_team">Insti Team</option>
+                      <option value="insti_team">Sales Agent</option>
                       <option value="warehouse_officer">Warehouse Officer</option>
                       <option value="approving_officer">Approving Officer</option>
                     </select>

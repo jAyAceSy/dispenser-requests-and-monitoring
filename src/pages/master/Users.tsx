@@ -14,6 +14,7 @@ export function Users() {
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingRolesFor, setEditingRolesFor] = useState<AppUser | null>(null);
+  const [editingWarehousesFor, setEditingWarehousesFor] = useState<AppUser | null>(null);
 
   async function load() {
     const [u, w] = await Promise.all([
@@ -37,6 +38,13 @@ export function Users() {
     if (next.length === 0) next = ['insti_team'];
     await updateUser(u.id, { roles: next, role: next[0] });
     setEditingRolesFor((current) => (current && current.id === u.id ? { ...current, roles: next } : current));
+  }
+
+  async function toggleWarehouse(u: AppUser, warehouseId: string) {
+    const has = u.warehouse_ids.includes(warehouseId);
+    const next = has ? u.warehouse_ids.filter((w) => w !== warehouseId) : [...u.warehouse_ids, warehouseId];
+    await updateUser(u.id, { warehouse_ids: next, warehouse_id: next[0] || null });
+    setEditingWarehousesFor((current) => (current && current.id === u.id ? { ...current, warehouse_ids: next } : current));
   }
 
   async function handleDelete(u: AppUser) {
@@ -93,14 +101,18 @@ export function Users() {
                     <td className="px-4 py-3 text-[var(--ink-soft)] whitespace-nowrap">{u.department || '—'}</td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       {u.roles.includes('warehouse_officer') ? (
-                        <select
-                          value={u.warehouse_id || ''}
-                          onChange={(e) => updateUser(u.id, { warehouse_id: e.target.value || null })}
-                          className="border border-[var(--line)] rounded-md px-2 py-1 text-xs bg-white"
-                        >
-                          <option value="">Unassigned</option>
-                          {warehouses.map((w) => <option key={w.id} value={w.id}>{w.warehouse_name}</option>)}
-                        </select>
+                        <button onClick={() => setEditingWarehousesFor(u)} className="flex flex-wrap gap-1 text-left items-center">
+                          {u.warehouse_ids.length === 0 && <span className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded px-2 py-0.5">Unassigned</span>}
+                          {u.warehouse_ids.map((wid) => {
+                            const w = warehouses.find((wh) => wh.id === wid);
+                            return w ? (
+                              <span key={wid} className="px-2 py-0.5 rounded text-xs font-medium bg-[#eef1f0] text-[var(--ink)] whitespace-nowrap">
+                                {w.warehouse_code}
+                              </span>
+                            ) : null;
+                          })}
+                          <span className="text-xs text-[var(--brand)] font-semibold ml-1 whitespace-nowrap">edit</span>
+                        </button>
                       ) : (
                         <span className="text-[var(--ink-soft)]">—</span>
                       )}
@@ -141,6 +153,31 @@ export function Users() {
             </div>
             <div className="flex justify-end mt-4">
               <button onClick={() => setEditingRolesFor(null)} className="px-4 py-2 text-sm rounded-md bg-[var(--brand)] text-white font-semibold">
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {editingWarehousesFor && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4" onClick={() => setEditingWarehousesFor(null)}>
+          <div className="bg-white rounded-xl border border-[var(--line)] max-w-sm w-full p-5" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-sm font-semibold text-[var(--ink)] mb-1">Assign warehouses</h2>
+            <p className="text-xs text-[var(--ink-soft)] mb-4">{editingWarehousesFor.name} · {editingWarehousesFor.email}</p>
+            {warehouses.length === 0 ? (
+              <p className="text-sm text-[var(--ink-soft)]">No warehouses set up yet.</p>
+            ) : (
+              <div className="flex flex-col gap-1 max-h-72 overflow-y-auto">
+                {warehouses.map((w) => (
+                  <label key={w.id} className="flex items-center gap-2 px-2 py-2.5 text-sm hover:bg-[#eef1f0] rounded cursor-pointer">
+                    <input type="checkbox" checked={editingWarehousesFor.warehouse_ids.includes(w.id)} onChange={() => toggleWarehouse(editingWarehousesFor, w.id)} />
+                    <span>{w.warehouse_name} <span className="text-[var(--ink-soft)]">({w.warehouse_code})</span></span>
+                  </label>
+                ))}
+              </div>
+            )}
+            <div className="flex justify-end mt-4">
+              <button onClick={() => setEditingWarehousesFor(null)} className="px-4 py-2 text-sm rounded-md bg-[var(--brand)] text-white font-semibold">
                 Done
               </button>
             </div>

@@ -18,7 +18,7 @@ export function Monitoring() {
     const filters = isAdminOrApproving
       ? {}
       : hasRole(profile, 'warehouse_officer')
-      ? { warehouseId: profile.warehouse_id || undefined }
+      ? { warehouseIds: profile.warehouse_ids }
       : { requestedBy: profile.id };
     fetchRequests(filters).then((data) => {
       setRequests(data as DispenserRequest[]);

@@ -18,6 +18,7 @@ export interface AppUser {
   roles: UserRole[];
   department: string | null;
   warehouse_id: string | null;
+  warehouse_ids: string[];
   active: boolean;
   created_at: string;
 }
@@ -136,7 +137,7 @@ export const STATUS_LABEL: Record<RequestStatus, string> = {
 };
 
 export const ROLE_LABEL: Record<UserRole, string> = {
-  insti_team: 'Insti Team',
+  insti_team: 'Sales Agent',
   warehouse_officer: 'Warehouse Officer',
   admin: 'Admin / Inventory Analyst',
   approving_officer: 'Approving Officer',

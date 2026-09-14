@@ -65,8 +65,8 @@ export function Dashboard() {
     if (!profile) return;
     const calls: Promise<void>[] = [];
     calls.push(fetchRequests({ requestedBy: profile.id }).then((d) => setOwnRequests(d as DispenserRequest[])));
-    if (isWarehouse && profile.warehouse_id) {
-      calls.push(fetchRequests({ warehouseId: profile.warehouse_id }).then((d) => setWarehouseRequests(d as DispenserRequest[])));
+    if (isWarehouse && profile.warehouse_ids.length > 0) {
+      calls.push(fetchRequests({ warehouseIds: profile.warehouse_ids }).then((d) => setWarehouseRequests(d as DispenserRequest[])));
     }
     if (isAdmin || isApproving) {
       calls.push(fetchRequests().then((d) => setAllRequests(d as DispenserRequest[])));
@@ -85,7 +85,7 @@ export function Dashboard() {
           {profile.name.split(' ')[0]}'s Dashboard
         </h1>
         <p className="text-sm text-[var(--ink-soft)] mt-1">
-          {[isInsti && 'Insti Team', isWarehouse && 'Warehouse Officer', isApproving && 'Approving Officer', isAdmin && 'Admin']
+          {[isInsti && 'Sales Agent', isWarehouse && 'Warehouse Officer', isApproving && 'Approving Officer', isAdmin && 'Admin']
             .filter(Boolean)
             .join(' · ')}
         </p>
@@ -115,7 +115,7 @@ export function Dashboard() {
       {isWarehouse && (
         <section>
           <h2 className="text-base font-semibold text-[var(--ink)] mb-4">Warehouse Officer</h2>
-          {!profile.warehouse_id ? (
+          {profile.warehouse_ids.length === 0 ? (
             <div className="bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-lg px-4 py-3">
               Your account isn't assigned to a warehouse yet. Ask an Admin to assign you to a Warehouse Location.
             </div>

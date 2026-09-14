@@ -64,7 +64,7 @@ export function RequestDetail() {
 
   const lineItems = req.dispenser_request_items || [];
   const isOwner = profile?.id === req.requested_by;
-  const isAssignedOfficer = hasRole(profile, 'warehouse_officer') && profile?.warehouse_id === req.warehouse_id;
+  const isAssignedOfficer = hasRole(profile, 'warehouse_officer') && !!profile?.warehouse_ids?.includes(req.warehouse_id);
   const isAdmin = hasRole(profile, 'admin');
   const isApprovingOfficer = hasRole(profile, 'approving_officer');
   const overdue = daysOverdue(req);
