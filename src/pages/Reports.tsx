@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { fetchRequests } from '../lib/queries';
 import type { DispenserRequest } from '../lib/types';
+import { STATUS_LABEL } from '../lib/types';
 import { downloadCsv } from '../lib/utils';
 
 function groupCount<T>(items: T[], keyFn: (t: T) => string) {
@@ -10,6 +11,12 @@ function groupCount<T>(items: T[], keyFn: (t: T) => string) {
     map.set(k, (map.get(k) || 0) + 1);
   }
   return Array.from(map.entries()).sort((a, b) => b[1] - a[1]);
+}
+
+function formatMonth(ym: string) {
+  const [year, month] = ym.split('-').map(Number);
+  const d = new Date(year, month - 1, 1);
+  return d.toLocaleDateString('en-PH', { year: 'numeric', month: 'short' });
 }
 
 export function Reports() {
@@ -35,29 +42,46 @@ export function Reports() {
     });
   }, [requests, dateFrom, dateTo, warehouseFilter]);
 
-  if (loading) return <div className="bg-[var(--panel)] border border-[var(--line)] rounded-xl h-64 animate-pulse" />;
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="bg-[var(--panel)] border border-[var(--line)] rounded-xl h-56 animate-pulse" />
+        ))}
+      </div>
+    );
+  }
 
   const byStore = groupCount(filtered, (r) => r.customer_name_snapshot || 'Unknown');
   const byWarehouse = groupCount(filtered, (r) => r.warehouses?.warehouse_name || 'Unknown');
   const byItem = new Map<string, number>();
   filtered.forEach((r) => {
     for (const item of r.dispenser_request_items || []) {
-      const key = item.dispenser_items ? `${item.dispenser_items.item_code} · ${item.dispenser_items.item_description}` : 'Unknown';
+      const key = item.dispenser_items ? `${item.dispenser_items.item_code} — ${item.dispenser_items.item_description}` : 'Unknown';
       byItem.set(key, (byItem.get(key) || 0) + Number(item.quantity_requested || 0));
     }
   });
   const byItemSorted = Array.from(byItem.entries()).sort((a, b) => b[1] - a[1]);
 
-  const byStatus = groupCount(filtered, (r) => r.status);
+  const byStatus = groupCount(filtered, (r) => STATUS_LABEL[r.status] || r.status);
 
   const byMonth = new Map<string, number>();
   filtered.forEach((r) => {
     const m = r.created_at.slice(0, 7);
     byMonth.set(m, (byMonth.get(m) || 0) + 1);
   });
-  const byMonthSorted = Array.from(byMonth.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  const byMonthSorted = Array.from(byMonth.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([ym, count]) => [formatMonth(ym), count] as [string, number]);
 
   const warehouseNames = Array.from(new Set(requests.map((r) => r.warehouses?.warehouse_name).filter(Boolean))) as string[];
+  const hasActiveFilters = !!(dateFrom || dateTo || warehouseFilter);
+
+  function clearFilters() {
+    setDateFrom('');
+    setDateTo('');
+    setWarehouseFilter('');
+  }
 
   function exportReport() {
     const rows: Record<string, any>[] = [];
@@ -87,35 +111,42 @@ export function Reports() {
           <h1 className="text-xl font-semibold text-[var(--ink)]">Monitoring &amp; Reports</h1>
           <p className="text-sm text-[var(--ink-soft)] mt-1">Trends and breakdowns across stores, warehouses, and dispenser items.</p>
         </div>
-        <button onClick={exportReport} className="border border-[var(--line)] text-sm font-medium rounded-md px-4 py-2.5 hover:bg-[#eef1f0]">
+        <button onClick={exportReport} className="border border-[var(--line)] text-sm font-medium rounded-md px-4 py-2.5 hover:bg-[#eef1f0] shrink-0">
           Export CSV
         </button>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <label className="flex flex-col gap-1">
-          <span className="text-xs font-medium text-[var(--ink-soft)]">Date From</span>
-          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="border border-[var(--line)] rounded-md px-3 py-2 text-sm bg-white" />
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className="text-xs font-medium text-[var(--ink-soft)]">Date To</span>
-          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="border border-[var(--line)] rounded-md px-3 py-2 text-sm bg-white" />
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className="text-xs font-medium text-[var(--ink-soft)]">Warehouse</span>
-          <select value={warehouseFilter} onChange={(e) => setWarehouseFilter(e.target.value)} className="border border-[var(--line)] rounded-md px-3 py-2 text-sm bg-white">
-            <option value="">All Warehouses</option>
-            {warehouseNames.map((w) => <option key={w} value={w}>{w}</option>)}
-          </select>
-        </label>
+      <div className="bg-[var(--panel)] border border-[var(--line)] rounded-xl p-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-[var(--ink-soft)]">Date From</span>
+            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="border border-[var(--line)] rounded-md px-3 py-2 text-sm bg-white w-full" />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-[var(--ink-soft)]">Date To</span>
+            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="border border-[var(--line)] rounded-md px-3 py-2 text-sm bg-white w-full" />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-[var(--ink-soft)]">Warehouse</span>
+            <select value={warehouseFilter} onChange={(e) => setWarehouseFilter(e.target.value)} className="border border-[var(--line)] rounded-md px-3 py-2 text-sm bg-white w-full">
+              <option value="">All Warehouses</option>
+              {warehouseNames.map((w) => <option key={w} value={w}>{w}</option>)}
+            </select>
+          </label>
+        </div>
+        {hasActiveFilters && (
+          <button onClick={clearFilters} className="text-xs font-semibold text-[var(--brand)] hover:underline mt-3">
+            Clear filters
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <ReportCard title="Requests by Store/Customer" rows={byStore} />
         <ReportCard title="Requests by Warehouse" rows={byWarehouse} />
         <ReportCard title="Quantity Requested by Dispenser Item" rows={byItemSorted} />
-        <ReportCard title="Request Status Breakdown" rows={byStatus} labelize />
-        <div className="col-span-2">
+        <ReportCard title="Request Status Breakdown" rows={byStatus} />
+        <div className="sm:col-span-2">
           <ReportCard title="Monthly Request Trend" rows={byMonthSorted} />
         </div>
       </div>
@@ -123,22 +154,22 @@ export function Reports() {
   );
 }
 
-function ReportCard({ title, rows, labelize = false }: { title: string; rows: [string, number][]; labelize?: boolean }) {
+function ReportCard({ title, rows }: { title: string; rows: [string, number][] }) {
   const max = Math.max(1, ...rows.map((r) => r[1]));
   return (
     <div className="bg-[var(--panel)] border border-[var(--line)] rounded-xl p-5">
       <h3 className="text-sm font-semibold text-[var(--ink)] mb-3">{title}</h3>
       {rows.length === 0 && <p className="text-sm text-[var(--ink-soft)]">No data for the selected filters.</p>}
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-3">
         {rows.slice(0, 8).map(([label, value]) => (
-          <div key={label} className="flex items-center gap-3">
-            <span className="text-xs text-[var(--ink-soft)] w-36 truncate">
-              {labelize ? label[0].toUpperCase() + label.slice(1) : label}
-            </span>
-            <div className="flex-1 bg-[#eef1f0] rounded h-2.5 overflow-hidden">
+          <div key={label} className="flex flex-col gap-1">
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="text-xs text-[var(--ink)] font-medium break-words">{label}</span>
+              <span className="text-xs font-mono-tag text-[var(--ink-soft)] shrink-0">{value}</span>
+            </div>
+            <div className="bg-[#eef1f0] rounded h-2 overflow-hidden">
               <div className="h-full bg-[var(--brand)] rounded" style={{ width: `${(value / max) * 100}%` }} />
             </div>
-            <span className="text-xs font-mono-tag text-[var(--ink)] w-8 text-right">{value}</span>
           </div>
         ))}
       </div>
