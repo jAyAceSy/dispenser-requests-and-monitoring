@@ -36,7 +36,7 @@ export function Login() {
     <div className="min-h-screen flex items-center justify-center bg-[var(--paper)] px-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="text-lg font-semibold text-[var(--ink)]">Insti Dispenser Request System</div>
+          <div className="text-lg font-semibold text-[var(--ink)]">Sales Samples and Dispenser Requests</div>
           <div className="text-sm text-[var(--ink-soft)] mt-1">Request &middot; Route &middot; Prepare &middot; Release &middot; Monitor</div>
         </div>
 
